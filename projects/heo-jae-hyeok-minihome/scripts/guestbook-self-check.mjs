@@ -41,7 +41,7 @@ async function check(method, payload, status, verify = () => {}, raw = false) {
   const body = await response.json();
   if (status >= 400) assert.equal(typeof body.message, 'string');
   if (status === 400 || status === 401) assert.equal(queries.length, 0);
-  await verify(body, response);
+  verify(body, response);
   count += 1;
 }
 const valid = { id: 1, nickname: '허재혁', message: '안녕하세요' };
