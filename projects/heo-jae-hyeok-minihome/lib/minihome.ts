@@ -24,18 +24,20 @@ export const defaultSettings: SiteSettings = {
 
 export function getYoutubeVideoId(value: string) {
   try {
-    const url = new URL(value);
-    const host = url.hostname.replace(/^www\./, '');
-    if (host === 'youtu.be') return url.pathname.split('/').filter(Boolean)[0] || '';
-    if (['youtube.com', 'm.youtube.com', 'music.youtube.com'].includes(host)) {
-      if (url.pathname === '/watch') return url.searchParams.get('v') || '';
-      const parts = url.pathname.split('/').filter(Boolean);
-      if (['shorts', 'embed', 'live'].includes(parts[0])) return parts[1] || '';
+    const url = new URL(value.trim());
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.port) return '';
+    let videoId = '';
+    if (['youtu.be', 'www.youtu.be'].includes(url.hostname)) {
+      videoId = /^\/([A-Za-z0-9_-]{11})\/?$/.exec(url.pathname)?.[1] || '';
+    } else if (['youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com'].includes(url.hostname)) {
+      videoId = url.pathname === '/watch'
+        ? (url.searchParams.getAll('v').length === 1 ? url.searchParams.get('v') || '' : '')
+        : /^\/(?:shorts|embed|live)\/([A-Za-z0-9_-]{11})\/?$/.exec(url.pathname)?.[1] || '';
     }
+    return /^[A-Za-z0-9_-]{11}$/.test(videoId) ? videoId : '';
   } catch {
     return '';
   }
-  return '';
 }
 
 export async function readJson<T>(response: Response) {
