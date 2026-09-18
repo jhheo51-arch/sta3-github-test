@@ -15,7 +15,7 @@ export async function PATCH(request: Request) {
   if (typeof body.youtubeUrl === 'string') {
     const youtubeUrl = body.youtubeUrl.trim();
     const videoId = getYoutubeVideoId(youtubeUrl);
-    if (!youtubeUrl || !/^[A-Za-z0-9_-]{11}$/.test(videoId)) return Response.json({ message: '올바른 유튜브 영상 링크를 입력해 주세요.' }, { status: 400 });
+    if (!videoId) return Response.json({ message: '올바른 유튜브 영상 링크를 입력해 주세요.' }, { status: 400 });
     if (youtubeUrl.length > 300) return Response.json({ message: '유튜브 링크는 300자 이내로 입력해 주세요.' }, { status: 400 });
     await env.DB.prepare(`
       INSERT INTO site_settings (id, interest_title, interest_tags, youtube_url, updated_at)
