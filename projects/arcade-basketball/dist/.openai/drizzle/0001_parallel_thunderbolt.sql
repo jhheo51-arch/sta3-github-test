@@ -1,0 +1,1 @@
+ALTER TABLE `ranking_sources` ADD `best_time_ms` integer;
