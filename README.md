@@ -1,5 +1,9 @@
 # Awesome STA
 
+## Projects
+
+- [MEMOIVE — 잊지 않기 위한 모바일 영감 노트](./memoive/)
+
 ## Career Newsletter
 
 - `career-newsletter-site/`: 날짜별 커리어 뉴스레터 달력 사이트
