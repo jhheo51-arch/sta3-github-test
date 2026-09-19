@@ -1,0 +1,3 @@
+interface:
+  display_name: "카톡 관계 분석"
+  short_description: "카톡 대화의 참여·시간대·반복 주제를 분석합니다"
