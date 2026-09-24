@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mini Tetris</title>
+<style>
+  body{margin:0;min-height:100vh;display:grid;place-content:center;background:#111;color:#fff;font:14px system-ui;text-align:center}
+  canvas{border:2px solid #fff;background:#000}
+  p{margin:8px 0}
+</style>
+<h1>Mini Tetris</h1>
+<p>점수: <b id="score">0</b></p>
+<canvas id="game" width="200" height="400"></canvas>
+<p>← → 이동 · ↑ 회전 · ↓ 내리기 · Space 즉시 내리기</p>
+<script>
+const canvas=document.querySelector('#game'),ctx=canvas.getContext('2d'),scoreEl=document.querySelector('#score');
+const W=10,H=20,S=20,colors=['','#0ff','#ff0','#a0f','#0f0','#f00','#00f','#f90'];
+const shapes=[
+ [[1,1,1,1]],[[2,2],[2,2]],[[0,3,0],[3,3,3]],[[0,4,4],[4,4,0]],
+ [[5,5,0],[0,5,5]],[[6,0,0],[6,6,6]],[[0,0,7],[7,7,7]]
+];
+let board,player,score,last=0,over=false;
+function reset(){board=Array.from({length:H},()=>Array(W).fill(0));score=0;over=false;spawn();}
+function spawn(){let n=Math.floor(Math.random()*shapes.length);player={m:shapes[n].map(r=>[...r]),x:3,y:0};if(hit())over=true;}
+function hit(dx=0,dy=0,m=player.m){return m.some((r,y)=>r.some((v,x)=>v&&(player.x+x+dx<0||player.x+x+dx>=W||player.y+y+dy>=H||board[player.y+y+dy]?.[player.x+x+dx])));}
+function merge(){player.m.forEach((r,y)=>r.forEach((v,x)=>{if(v)board[player.y+y][player.x+x]=v}));
+  for(let y=H-1;y>=0;y--)if(board[y].every(Boolean)){board.splice(y,1);board.unshift(Array(W).fill(0));score+=100;y++;}
+  scoreEl.textContent=score;spawn();
+}
+function drop(){if(!hit(0,1))player.y++;else merge();}
+function rotate(){let m=player.m[0].map((_,i)=>player.m.map(r=>r[i]).reverse());if(!hit(0,0,m))player.m=m;}
+function drawCell(x,y,v){ctx.fillStyle=colors[v];ctx.fillRect(x*S,y*S,S-1,S-1);}
+function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);board.forEach((r,y)=>r.forEach((v,x)=>v&&drawCell(x,y,v)));player.m.forEach((r,y)=>r.forEach((v,x)=>v&&drawCell(player.x+x,player.y+y,v)));
+  if(over){ctx.fillStyle='#000b';ctx.fillRect(0,170,200,60);ctx.fillStyle='#fff';ctx.font='bold 18px system-ui';ctx.textAlign='center';ctx.fillText('게임 오버',100,196);ctx.font='13px system-ui';ctx.fillText('Enter로 다시 시작',100,218);}
+}
+document.addEventListener('keydown',e=>{if(over){if(e.key==='Enter')reset();return}if(['ArrowLeft','ArrowRight','ArrowDown','ArrowUp',' '].includes(e.key))e.preventDefault();
+  if(e.key==='ArrowLeft'&&!hit(-1))player.x--;if(e.key==='ArrowRight'&&!hit(1))player.x++;if(e.key==='ArrowDown')drop();if(e.key==='ArrowUp')rotate();if(e.key===' '){while(!hit(0,1))player.y++;drop();}draw();
+});
+function loop(t=0){if(!over&&t-last>500){drop();last=t}draw();requestAnimationFrame(loop)}
+reset();loop();
+</script>
+</html>
