@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {DatabaseSync} from 'node:sqlite';
+import worker from '../dist/server/index.js';
+const sqlite=new DatabaseSync(':memory:');
+for(const name of fs.readdirSync('drizzle').filter(n=>n.endsWith('.sql')))sqlite.exec(fs.readFileSync('drizzle/'+name,'utf8'));
+const DB={prepare(sql){return{bind(...args){return{all:async()=>({results:sqlite.prepare(sql).all(...args)}),run:async()=>sqlite.prepare(sql).run(...args)}}}},async batch(statements){sqlite.exec('BEGIN');try{const results=[];for(const statement of statements)results.push(await statement.run());sqlite.exec('COMMIT');return results}catch(e){sqlite.exec('ROLLBACK');throw e}}};
+const req=(method,body,origin='https://game.example')=>new Request('https://game.example/api/rankings',{method,headers:{'content-type':'application/json',origin},...(body===undefined?{}:{body:JSON.stringify(body)})});
+const post=b=>worker.fetch(req('POST',b),{DB});const get=async()=>await(await worker.fetch(req('GET'),{DB})).json();
+const src=i=>'00000000-0000-4000-8000-'+String(i).padStart(12,'0');
+const row=(name,mode,games,wins,bestScore=0)=>({name,mode,games,wins,bestScore,made:games*2,attempts:games*3});
+let count=0;async function check(n,f){await f();count++;console.log('PASS',n)}
+await check('Schema migrations execute and empty modes return arrays',async()=>{const r=await get();assert.deepEqual(Object.keys(r.modes),['one','challenge','local','online','contest']);assert.equal(r.modes.one.length,0)});
+await check('Independent browser sources aggregate same participant name',async()=>{assert.equal((await post({source:src(1),rows:[row('참가자','one',4,2)]})).status,200);await post({source:src(2),rows:[row('참가자','one',3,1)]});const r=(await get()).modes.one[0];assert.equal(r.games,7);assert.equal(r.wins,3);assert.equal(r.made,14)});
+await check('Retry, reload and stale submissions never double or erase totals',async()=>{for(let i=0;i<3;i++)await post({source:src(1),rows:[row('참가자','one',4,2)]});await post({source:src(1),rows:[row('참가자','one',2,1)]});assert.equal((await get()).modes.one[0].games,7);await post({source:src(1),rows:[row('참가자','one',5,3)]});assert.equal((await get()).modes.one[0].games,8)});
+await check('Each mode returns exactly top five from all participants',async()=>{for(let i=0;i<9;i++)await post({source:src(i+10),rows:['one','local','online','challenge','contest'].map(mode=>row('PLAYER '+i,mode,10,i,mode==='contest'?i*4:i*10))});const r=await get();for(const mode of Object.keys(r.modes)){assert.equal(r.modes[mode].length,5);assert.equal(r.modes[mode][0].name,'PLAYER 8');assert.equal(r.modes[mode][4].name,mode==='one'?'참가자':'PLAYER 4')}});
+await check('Best shooting score takes max, games add across sources',async()=>{await post({source:src(100),rows:[row('SHOOTER','challenge',2,0,100)]});await post({source:src(101),rows:[row('SHOOTER','challenge',3,0,120)]});const r=(await get()).modes.challenge[0];assert.equal(r.bestScore,120);assert.equal(r.games,5)});
+await check('Invalid values and foreign origins cannot write',async()=>{for(const input of [{source:'bad',rows:[]},{source:src(1),rows:[row('x','bogus',1,0)]},{source:src(1),rows:[row('x','one',1,2)]},{source:src(1),rows:[row('','one',1,0)]}])assert.equal((await post(input)).status,400);assert.equal((await worker.fetch(req('POST',{source:src(1),rows:[]},'https://other.example'),{DB})).status,403)});
+await check('Names are parameters, not executable SQL',async()=>{await post({source:src(222),rows:[row("'; DROP TABLE",'one',1,0)]});assert(sqlite.prepare('SELECT COUNT(*) AS n FROM ranking_sources').get().n>0)});
+await check('DB outages report error and never claim saved',async()=>{assert.equal((await worker.fetch(req('POST',{source:src(1),rows:[]}),{})).status,503);assert.equal((await worker.fetch(req('GET'),{})).status,503)});
+await check('Worker serves full game and no-cache rankings',async()=>{const res=await worker.fetch(new Request('https://game.example/'),{DB});assert.equal(res.status,200);assert((await res.text()).includes('GLOBAL TOP 5'));assert.equal((await worker.fetch(req('GET'),{DB})).headers.get('cache-control'),'no-store')});
+console.log(count+' API checks passed using real SQLite with generated migrations.');
