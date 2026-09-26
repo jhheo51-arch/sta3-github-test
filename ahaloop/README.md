@@ -2,7 +2,7 @@
 
 > 혜택을 찾는 데서 끝내지 않고, 받기까지 해야 할 일을 줄이는 혜택 회수 서비스
 
-[아하루프 비공개 데모](https://ahaloop.sooyeon-jun-0389.chatgpt.site) · 접속 시 ChatGPT 로그인이 필요합니다.
+[아하루프 외부 테스트](https://ahaloop.sooyeon-jun-0389.chatgpt.site) · 고객별 기록을 분리하기 위해 ChatGPT 로그인이 필요합니다. 운영 검증실은 지정된 운영자만 접근할 수 있습니다.
 
 ## 해결하려는 문제
 
@@ -43,6 +43,8 @@
 
 ## 검증 상태
 
+검사 범위와 완료 기준은 [아하루프 하네스 계약](harness.md)에 정리했습니다.
+
 ```bash
 npm run harness:pass
 ```
@@ -52,7 +54,7 @@ npm run harness:pass
 - ESLint와 프로덕션 빌드
 - 출처·발송·데이터·후속 작업 경고 규칙
 
-GitHub에서는 `ahaloop/**` 변경이 있는 PR마다 같은 하네스를 자동 실행합니다. `main`은 `AHALOOP harness`가 통과해야 반영할 수 있습니다. 비공개 운영 사이트의 접속 가능 여부는 GitHub가 30분마다 확인하고, 실제 운영 데이터는 운영자 화면을 열면 즉시·열어 둔 동안 30분마다 점검합니다. 비공개 로그인 장벽을 우회하지 않으며 실제 원문 재수집이나 문자 재발송도 자동 실행하지 않습니다.
+GitHub에서는 `ahaloop/**` 변경이 있는 PR마다 같은 하네스를 자동 실행합니다. `main`은 `AHALOOP harness`가 통과해야 반영할 수 있습니다. 외부 테스트 주소의 로그인 보호 응답은 GitHub가 30분마다 확인하고, 실제 운영 데이터는 운영자 화면을 열면 즉시·열어 둔 동안 30분마다 점검합니다. 고객 데이터나 로그인 상태를 우회해 읽지 않으며 실제 원문 재수집이나 문자 재발송도 자동 실행하지 않습니다.
 
 합성 검사는 구현 회귀를 막기 위한 것이며 실제 고객 정확도나 전환 성과가 아닙니다.
 
@@ -70,7 +72,8 @@ npm run dev
 ## 주요 문서
 
 - [혜택 회수 PRD](docs/AHALOOP_Benefit_Recovery_PRD_v1.0.md)
-- [BA·CRM·Consultant·PM 포트폴리오 근거](docs/AHALOOP_Portfolio_Upgrade_v2.0.md)
+- [BA 중심·컨설턴트식 포트폴리오 근거](docs/AHALOOP_Portfolio_Upgrade_v2.0.md)
+- [하네스 계약](harness.md)
 - [브랜드 PRD](docs/AHALOOP_Brand_PRD_v1.0.md)
 - [알림 파일럿 운영 기준](docs/AHALOOP_Notification_Pilot_v1.0.md)
 - [첫 파일럿 운영안](docs/AHALOOP_Pilot_Operations_v1.0.md)
