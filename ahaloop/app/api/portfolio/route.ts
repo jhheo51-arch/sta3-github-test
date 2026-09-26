@@ -1,12 +1,12 @@
 import {getD1Binding} from "@/db";
-import {requestUser,apiError} from "@/lib/request-user";
+import {requireOperator,apiError} from "@/lib/request-user";
 import {benefits} from "@/lib/benefit-catalog";
 import {assess,RULE_VERSION} from "@/lib/benefit-rules";
 import {readProfile} from "@/lib/profile-model";
 import {z} from "zod";
 export const dynamic="force-dynamic";
 export async function GET(){
- try{const user=await requestUser();const db=getD1Binding();
+ try{const user=await requireOperator();const db=getD1Binding();
  const [records,reviews,events,cohorts,assignments]=await db.batch([
   db.prepare("SELECT * FROM portfolio_records WHERE user_id=? ORDER BY created_at DESC LIMIT 100").bind(user),
   db.prepare("SELECT * FROM source_reviews WHERE user_id=? ORDER BY discovered_at DESC LIMIT 30").bind(user),
@@ -28,7 +28,7 @@ const requestSchema=z.discriminatedUnion("action",[
  z.object({action:z.literal("campaign")}),z.object({action:z.literal("assign")}),
 ]);
 export async function POST(request:Request){
- try{const user=await requestUser();const parsed=requestSchema.safeParse(await request.json());if(!parsed.success)return Response.json({error:"필수 입력과 글자 수를 확인해 주세요."},{status:400});const p=parsed.data;const db=getD1Binding();const now=new Date().toISOString();
+ try{const user=await requireOperator();const parsed=requestSchema.safeParse(await request.json());if(!parsed.success)return Response.json({error:"필수 입력과 글자 수를 확인해 주세요."},{status:400});const p=parsed.data;const db=getD1Binding();const now=new Date().toISOString();
  if(p.action==="record"){
   const r=recordSchema.safeParse(p);if(!r.success)return Response.json({error:"제목 3~120자, 내용 10~5,000자를 입력해 주세요."},{status:400});
   await db.prepare("INSERT INTO portfolio_records (id,user_id,kind,title,body,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)").bind(crypto.randomUUID(),user,r.data.kind,r.data.title,r.data.body,r.data.status,now,now).run();

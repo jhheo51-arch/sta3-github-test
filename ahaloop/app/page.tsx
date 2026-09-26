@@ -5,6 +5,7 @@ import { emptyProfile, type ProfileData } from "@/lib/profile-model";
 import { BenefitValueSummary } from "@/components/benefit-value-summary";
 import { PortfolioWorkspace } from "@/components/portfolio-workspace";
 import { ConditionSelector } from "@/components/condition-selector";
+import { AccountDataControl } from "@/components/account-data-control";
 import { useCallback, useEffect, useState } from "react";
 import {
   ArrowUpRight,
@@ -97,6 +98,10 @@ type SourceDashboard = {
   summary: { total: number; apiCandidates: number; keysRequired: number; automatedNow: number; urgentBenefits: number };
   speedPolicy: { discoverSlaMinutes: number; verifySlaMinutes: number; notifySlaMinutes: number; rule: string };
 };
+type SessionInfo={
+  role:"operator"|"customer";
+  retention:{notificationAttemptsDays:number;activityDays:number;followupDays:number;accountRecords:string;enforcement:string};
+};
 
 const initialProfile: Profile = emptyProfile;
 const won = new Intl.NumberFormat("ko-KR");
@@ -117,6 +122,7 @@ const nav: { id: View; label: string }[] = [
   { id: "performance", label: "운영·성과" },
   { id: "portfolio", label: "검증실" },
 ];
+const operatorViews=new Set<View>(["sources","performance","portfolio"]);
 
 export default function Page() {
   const [view, setView] = useState<View>("brief");
@@ -133,16 +139,18 @@ export default function Page() {
   const [saving, setSaving] = useState(false);
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [sourceDashboard, setSourceDashboard] = useState<SourceDashboard | null>(null);
+  const [session, setSession] = useState<SessionInfo | null>(null);
 
   const loadData = useCallback(async () => {
     setCatalogState("loading");
     try {
-    const [benefitResponse, profileResponse, dashboardResponse, sourceResponse] =
+    const [benefitResponse, profileResponse, dashboardResponse, sourceResponse, sessionResponse] =
       await Promise.all([
         fetch("/api/benefits", { cache: "no-store" }),
         fetch("/api/profile", { cache: "no-store" }),
         fetch("/api/benefit-dashboard", { cache: "no-store" }),
         fetch("/api/benefit-sources", { cache: "no-store" }),
+        fetch("/api/session", { cache: "no-store" }),
       ]);
     if (benefitResponse.ok) {
       const data = await benefitResponse.json() as ApiResult;
@@ -156,8 +164,11 @@ export default function Page() {
     }
     if (dashboardResponse.ok) setDashboard(await dashboardResponse.json());
     if (sourceResponse.ok) setSourceDashboard(await sourceResponse.json());
+    if (sessionResponse.ok) setSession(await sessionResponse.json());
     } catch { setCatalogState("error"); setCatalog([]); setNotice("연결이 끊겼습니다. 다시 시도해 주세요."); }
   }, []);
+
+  const visibleNav=nav.filter((item)=>!operatorViews.has(item.id)||session?.role==="operator");
 
   useEffect(() => {
     queueMicrotask(() => loadData().catch(() => setNotice("연결이 끊겼습니다. 다시 시도해 주세요.")));
@@ -350,7 +361,7 @@ export default function Page() {
             </span>
           </button>
           <nav className="order-3 flex w-full gap-1 overflow-x-auto rounded-2xl bg-slate-100 p-1 md:order-2 md:w-auto">
-            {nav.map((item) => (
+            {visibleNav.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setView(item.id)}
@@ -364,7 +375,7 @@ export default function Page() {
             variant="outline"
             className="order-2 border-[#b6dfd2] bg-[#edfaf5] text-[#176d55] md:order-3"
           >
-            전국 · 전 생애주기 · 파일럿
+            {session?.role==="operator"?"운영자 보기 · 파일럿":"전국 · 전 생애주기"}
           </Badge>
         </div>
       </header>
@@ -403,6 +414,7 @@ export default function Page() {
       {view === "profile" && (
         <div className="mx-auto max-w-5xl px-5 py-9 md:px-9">
           <ConditionSelector key={JSON.stringify(profile)} profile={profile} saving={saving} onSave={saveProfile} />
+          <AccountDataControl retention={session?.retention??null} onDeleted={()=>void loadData()} />
         </div>
       )}
       {view === "delivery" && (
@@ -412,9 +424,9 @@ export default function Page() {
           onGo={() => setView("brief")}
         />
       )}
-      {view === "sources" && <SourceRadar dashboard={sourceDashboard} />}
-      {view === "performance" && <PerformanceView dashboard={dashboard} />}
-      {view === "portfolio" && <PortfolioWorkspace />}
+      {view === "sources" && session?.role==="operator" && <SourceRadar dashboard={sourceDashboard} />}
+      {view === "performance" && session?.role==="operator" && <PerformanceView dashboard={dashboard} />}
+      {view === "portfolio" && session?.role==="operator" && <PortfolioWorkspace />}
       <Dialog open={!!progressBenefit} onOpenChange={open=>{if(!open)setProgressBenefit(null);}}><DialogContent><DialogHeader><DialogTitle>외부 진행 사실 기록</DialogTitle><DialogDescription>이 화면은 기관에 신청을 제출하거나 승인을 확인하지 않습니다. 직접 진행한 사실만 기록하세요.</DialogDescription></DialogHeader>
       {progressBenefit && <><p>{progressBenefit.title}</p><p>현재: {stageLabels[applications.find(a=>a.benefit_id===progressBenefit.id)?.stage??"checking"]}</p>
       {applications.find(a=>a.benefit_id===progressBenefit.id)?.stage==="approved"&&<><Label htmlFor="receipt-date">실제 수령·이용일</Label><Input id="receipt-date" type="date" value={receiptDate} max={new Date().toISOString().slice(0,10)} onChange={e=>setReceiptDate(e.target.value)}/>{progressBenefit.valueCadence!=="non_cash"&&<><Label htmlFor="receipt-amount">실제로 받은 금액 (원)</Label><Input id="receipt-amount" type="number" min={1} value={receiptAmount} onChange={e=>setReceiptAmount(e.target.value)}/></>}</>}
@@ -804,6 +816,17 @@ function ApplicationsView({
                       1) *
                       20,
                   );
+            const nextAction=application.stage==="checking"
+              ? benefit.preparationSteps?.[0]??"공식 원문에서 세부 조건 확인"
+              : application.stage==="documents"
+                ? benefit.preparationSteps?.[1]??"필요 서류와 신청 방법 확인"
+                : application.stage==="submitted"
+                  ? "기관 접수 상태와 보완 요청 확인"
+                  : application.stage==="approved"
+                    ? "실제 수령·이용일을 확인해 기록"
+                    : application.stage==="received"
+                      ? "수령 기록 완료"
+                      : "다음 모집 공고가 열리는지 감시";
             return (
               <article
                 key={application.application_id}
@@ -841,6 +864,14 @@ function ApplicationsView({
                   <span>신청</span>
                   <span>승인</span>
                   <span>수령</span>
+                </div>
+                <div className="mt-5 rounded-2xl border border-[#bedfd5] bg-[#f4fbf8] p-4">
+                  <p className="text-sm font-semibold text-[#176d55]">지금 할 일 하나</p>
+                  <p className="mt-2 leading-7 text-slate-800">{nextAction}</p>
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    <Button asChild variant="outline"><a href={benefit.sourceUrl} target="_blank" rel="noreferrer">{benefit.applicationCta??"공식 원문 확인"}<ArrowUpRight aria-hidden="true"/></a></Button>
+                    {benefit.preparationSteps&&<details className="w-full text-sm text-slate-600"><summary className="cursor-pointer py-2 font-medium">전체 준비 순서 보기</summary><ol className="list-inside list-decimal space-y-2 pt-2">{benefit.preparationSteps.map(step=><li key={step}>{step}</li>)}</ol></details>}
+                  </div>
                 </div>
               </article>
             );

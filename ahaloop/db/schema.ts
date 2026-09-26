@@ -29,6 +29,30 @@ export const experimentAssignments = sqliteTable("experiment_assignments", {
   variant:text("variant").notNull(),assignedAt:text("assigned_at").notNull(),
 },t=>[uniqueIndex("idx_experiment_user").on(t.userId,t.experimentId)]);
 
+export const pilotSessions = sqliteTable("pilot_sessions", {
+  id: text("id").primaryKey(),
+  operatorUserId: text("operator_user_id").notNull(),
+  participantCode: text("participant_code").notNull(),
+  status: text("status").notNull().default("planned"),
+  consentStatus: text("consent_status").notNull().default("pending"),
+  choicesToFirstBenefit: integer("choices_to_first_benefit"),
+  firstBenefitElapsedMs: integer("first_benefit_elapsed_ms"),
+  firstBenefitId: text("first_benefit_id"),
+  preparationStarted: integer("preparation_started", { mode: "boolean" })
+    .notNull()
+    .default(false),
+  stopPoint: text("stop_point"),
+  observation: text("observation"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+}, (table) => [
+  uniqueIndex("idx_pilot_operator_participant").on(
+    table.operatorUserId,
+    table.participantCode,
+  ),
+  index("idx_pilot_operator_status").on(table.operatorUserId, table.status),
+]);
+
 export const userProfiles = sqliteTable("user_profiles", {
   userId: text("user_id").primaryKey(),
   profileData: text("profile_data"),

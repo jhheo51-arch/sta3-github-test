@@ -7,6 +7,10 @@ assert.equal((await api("/api/profile",null,false)).status,401);
 const p={...emptyProfile,...interpret("서울에 사는 만 27세 직장인이고 혼자 월세로 살아요.").patch,name:"로컬 검증용",kpassRegistered:true,transitTrips:20,monthlyTransitCost:60000,consent:false};
 p.confirmedFields.push("kpassRegistered","transitTrips","monthlyTransitCost");
 assert.equal((await api("/api/profile",{...p,userId:"another-customer"})).status,200,"profile save");
+const session=await api("/api/session");assert.equal(session.status,200);assert.equal(session.data.role,"operator");assert.equal(session.data.retention.activityDays,180);
+const pilotBefore=await api("/api/pilot");assert.equal(pilotBefore.status,200);assert.equal(pilotBefore.data.target,5);
+assert.equal((await api("/api/pilot",{participantCode:"P01",status:"observed",consentStatus:"pending",choicesToFirstBenefit:3,firstBenefitElapsedSeconds:45,firstBenefitId:"kpass-youth-2026",preparationStarted:true,stopPoint:"",observation:"합성 로컬 검사"})).status,400,"observation requires consent");
+assert.equal((await api("/api/pilot",{participantCode:"P01",status:"observed",consentStatus:"agreed",choicesToFirstBenefit:3,firstBenefitElapsedSeconds:45,firstBenefitId:"kpass-youth-2026",preparationStarted:true,stopPoint:"",observation:"합성 로컬 검사"})).status,200);
 const saved=await api("/api/profile");assert.equal(saved.data.profile.name,p.name);assert.equal(saved.data.profile.userId,undefined,"client ID ignored");
 const passSession=crypto.randomUUID();
 assert.equal((await api("/api/pass-event",{eventType:"pass_session_started",sessionId:passSession})).status,201);
@@ -36,4 +40,4 @@ assert.equal((await api("/api/notification-test",{channel:"sms",confirmed:false}
 assert.equal((await api("/api/notification-test",{channel:"sms",confirmed:true,to:"01000000000"})).status,400,"client cannot supply recipient");
 assert.equal((await api("/api/notification-test",{channel:"sms",confirmed:true})).status,409,"missing secrets never send");
 const final=await api("/api/portfolio");assert.ok(final.data.records.some(r=>r.title==="합성 QA 기록"));assert.ok(final.data.events.some(e=>e.event_type==="benefit_received"));
-console.log("Local integration passed: login gate, profile, AHALOOP PASS events, client-ID rejection, units, state conflict, receipt validation, actual amount, consent blocking, record persistence, preview separation, real-send blocking.");
+console.log("Local integration passed: login/role gate, pilot consent, retention policy, profile, AHALOOP PASS events, client-ID rejection, units, state conflict, receipt validation, actual amount, consent blocking, record persistence, preview separation, real-send blocking.");

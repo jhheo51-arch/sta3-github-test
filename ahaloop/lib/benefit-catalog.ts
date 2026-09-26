@@ -24,6 +24,8 @@ export type Benefit = {
   amountBasis: string;
   urgency: "urgent" | "new" | "normal" | "always";
   freshnessLabel: string;
+  preparationSteps?: string[];
+  applicationCta?: string;
 };
 
 export const benefits: Benefit[] = [
@@ -52,6 +54,7 @@ export const benefits: Benefit[] = [
     eligibility: ["만 19~34세", "월 15회 이상 대중교통 이용", "K-패스 회원·카드 등록"], missing: ["최근 한 달 실제 이용 횟수"], deadline: "상시",
     sourceUrl: "https://www.korea.kr/news/policyFocusView.do?newsId=148958934&pkgId=49500831", sourceCheckedAt: "2026-09-14", confidence: 92, status: "ready", estimatedValue: 18000,
     valueCadence: "monthly", amountBasis: "월 교통비 60,000원의 청년 환급률 30% 적용", urgency: "always", freshnessLabel: "오늘 공식 원문 확인",
+    preparationSteps: ["만 나이와 지난달 대중교통 이용 횟수 확인", "K-패스 카드·회원 등록 여부 확인", "공식 안내에서 적용 지역과 환급 조건 최종 확인"], applicationCta: "공식 안내에서 등록 방법 확인",
   },
   {
     id: "qnet-youth-fee-2026", title: "청년 국가기술자격시험 응시료 지원", provider: "한국산업인력공단", category: "교육",
