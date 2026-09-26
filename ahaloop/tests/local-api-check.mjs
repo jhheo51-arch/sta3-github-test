@@ -3,6 +3,10 @@ import assert from "node:assert/strict";
 import {emptyProfile,interpret} from "../lib/profile-model.ts";
 const origin="http://localhost:5173";
 async function api(path,body,auth=true){const r=await fetch(origin+path,{method:body?"POST":"GET",headers:{...(auth?{Cookie:"__sites_local_auth=1"}:{}),"Content-Type":"application/json"},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json()};}
+const signedOutPage=await fetch(origin+"/",{redirect:"manual"});
+assert.ok([302,303,307,308].includes(signedOutPage.status),"signed-out customer is sent to ChatGPT sign-in");
+assert.match(signedOutPage.headers.get("location")??"",/^\/signin-with-chatgpt\?return_to=/);
+assert.equal((await fetch(origin+"/",{headers:{Cookie:"__sites_local_auth=1"}})).status,200,"signed-in customer can open the journey");
 assert.equal((await api("/api/profile",null,false)).status,401);
 const p={...emptyProfile,...interpret("서울에 사는 만 27세 직장인이고 혼자 월세로 살아요.").patch,name:"로컬 검증용",kpassRegistered:true,transitTrips:20,monthlyTransitCost:60000,consent:false};
 p.confirmedFields.push("kpassRegistered","transitTrips","monthlyTransitCost");
@@ -41,4 +45,4 @@ assert.equal((await api("/api/notification-test",{channel:"sms",confirmed:false}
 assert.equal((await api("/api/notification-test",{channel:"sms",confirmed:true,to:"01000000000"})).status,400,"client cannot supply recipient");
 assert.equal((await api("/api/notification-test",{channel:"sms",confirmed:true})).status,409,"missing secrets never send");
 const final=await api("/api/portfolio");assert.ok(final.data.records.some(r=>r.title==="합성 QA 기록"));assert.ok(final.data.events.some(e=>e.event_type==="benefit_received"));
-console.log("Local integration passed: login/role gate, pilot consent, retention policy, profile, AHALOOP PASS events, client-ID rejection, units, state conflict, receipt validation, actual amount, consent blocking, record persistence, preview separation, real-send blocking.");
+console.log("Local integration passed: page sign-in, login/role gate, pilot consent, retention policy, profile, AHALOOP PASS events, client-ID rejection, units, state conflict, receipt validation, actual amount, consent blocking, record persistence, preview separation, real-send blocking.");

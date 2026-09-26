@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import { requireChatGPTUser } from "@/app/chatgpt-auth";
 import "./globals.css";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "아하루프 | 놓친 혜택을 받을 때까지",
@@ -8,6 +11,7 @@ export const metadata: Metadata = {
   icons: { icon: "/brand/ahaloop-mascot-profile.png", shortcut: "/brand/ahaloop-mascot-profile.png", apple: "/brand/ahaloop-mascot-profile.png" },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  await requireChatGPTUser("/");
   return <html lang="ko"><body className="antialiased">{children}</body></html>;
 }
