@@ -3,6 +3,7 @@
 ## Projects
 
 - [MEMOIVE — 잊지 않기 위한 모바일 영감 노트](./memoive/)
+- [아하루프 — 놓친 혜택을 받을 때까지](./ahaloop/)
 
 ## Career Newsletter
 

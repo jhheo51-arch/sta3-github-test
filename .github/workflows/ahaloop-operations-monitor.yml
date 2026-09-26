@@ -1,0 +1,47 @@
+name: AHALOOP operations monitor
+
+on:
+  schedule:
+    - cron: "17,47 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  monitor:
+    name: AHALOOP operations monitor
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the private operations endpoint
+        id: health
+        continue-on-error: true
+        env:
+          MONITOR_TOKEN: ${{ secrets.AHALOOP_MONITOR_TOKEN }}
+          SITE_URL: ${{ vars.AHALOOP_SITE_URL }}
+        run: |
+          set -euo pipefail
+          test -n "$MONITOR_TOKEN"
+          test -n "$SITE_URL"
+          response=$(curl --fail-with-body --silent --show-error --max-time 30 --request POST --header "Authorization: Bearer ${MONITOR_TOKEN}" "${SITE_URL%/}/api/operations-health")
+          status=$(printf '%s' "$response" | jq -r '.status')
+          test "$status" = "healthy"
+      - name: Open or update an operations issue
+        if: ${{ steps.health.outcome == 'failure' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh label create ahaloop-operations --color D93F0B --description "아하루프 운영 안전망 경고" --force
+          issue=$(gh issue list --state open --label ahaloop-operations --json number --jq '.[0].number // empty')
+          body="운영 안전망이 정상 상태가 아닙니다. 실제 원문 재수집이나 문자 재발송은 자동 실행하지 않았습니다. 아하루프 검증실의 운영 안전망을 확인하세요. 실행 기록: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          if [ -n "$issue" ]; then gh issue comment "$issue" --body "$body"; else gh issue create --title "아하루프 운영 안전망 확인 필요" --label ahaloop-operations --body "$body"; fi
+          exit 1
+      - name: Close the operations issue after recovery
+        if: ${{ steps.health.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          issue=$(gh issue list --state open --label ahaloop-operations --json number --jq '.[0].number // empty')
+          if [ -n "$issue" ]; then gh issue close "$issue" --comment "운영 안전망이 다시 정상 상태로 확인되었습니다."; fi
