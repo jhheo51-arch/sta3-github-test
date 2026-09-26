@@ -1,4 +1,4 @@
-name: AHALOOP operations monitor
+name: AHALOOP availability monitor
 
 on:
   schedule:
@@ -11,37 +11,40 @@ permissions:
 
 jobs:
   monitor:
-    name: AHALOOP operations monitor
+    name: AHALOOP private-site availability
     runs-on: ubuntu-latest
     steps:
-      - name: Check the private operations endpoint
-        id: health
+      - name: Check that the private Site responds
+        id: availability
         continue-on-error: true
         env:
-          MONITOR_TOKEN: ${{ secrets.AHALOOP_MONITOR_TOKEN }}
           SITE_URL: ${{ vars.AHALOOP_SITE_URL }}
         run: |
           set -euo pipefail
-          test -n "$MONITOR_TOKEN"
           test -n "$SITE_URL"
-          response=$(curl --fail-with-body --silent --show-error --max-time 30 --request POST --header "Authorization: Bearer ${MONITOR_TOKEN}" "${SITE_URL%/}/api/operations-health")
-          status=$(printf '%s' "$response" | jq -r '.status')
-          test "$status" = "healthy"
-      - name: Open or update an operations issue
-        if: ${{ steps.health.outcome == 'failure' }}
+          code=$(curl --silent --show-error --max-time 30 --output /tmp/ahaloop-response --write-out "%{http_code}" "${SITE_URL%/}/")
+          test -s /tmp/ahaloop-response
+          case "$code" in
+            2??|3??|401|403) ;;
+            *) echo "Unexpected HTTP status: $code"; exit 1 ;;
+          esac
+      - name: Open or update an availability issue
+        if: ${{ steps.availability.outcome == 'failure' }}
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           gh label create ahaloop-operations --color D93F0B --description "아하루프 운영 안전망 경고" --force
           issue=$(gh issue list --state open --label ahaloop-operations --json number --jq '.[0].number // empty')
-          body="운영 안전망이 정상 상태가 아닙니다. 실제 원문 재수집이나 문자 재발송은 자동 실행하지 않았습니다. 아하루프 검증실의 운영 안전망을 확인하세요. 실행 기록: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          if [ -n "$issue" ]; then gh issue comment "$issue" --body "$body"; else gh issue create --title "아하루프 운영 안전망 확인 필요" --label ahaloop-operations --body "$body"; fi
+          body="비공개 아하루프 사이트가 정상 응답하지 않았습니다. 이 검사는 고객 데이터가 아니라 사이트 접속 가능 여부만 확인합니다. 실행 기록: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          if [ -n "$issue" ]; then gh issue comment "$issue" --body "$body"; else gh issue create --title "아하루프 사이트 접속 확인 필요" --label ahaloop-operations --body "$body"; fi
           exit 1
-      - name: Close the operations issue after recovery
-        if: ${{ steps.health.outcome == 'success' }}
+      - name: Close the availability issue after recovery
+        if: ${{ steps.availability.outcome == 'success' }}
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           issue=$(gh issue list --state open --label ahaloop-operations --json number --jq '.[0].number // empty')
-          if [ -n "$issue" ]; then gh issue close "$issue" --comment "운영 안전망이 다시 정상 상태로 확인되었습니다."; fi
+          if [ -n "$issue" ]; then gh issue close "$issue" --comment "비공개 아하루프 사이트가 다시 정상 응답합니다."; fi

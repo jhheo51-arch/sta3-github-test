@@ -1,4 +1,3 @@
-import {env} from "cloudflare:workers";
 import {getD1Binding} from "@/db";
 import {evaluateOperationsHealth,type OperationsSnapshot} from "@/lib/operations-health";
 import {requireOperator,apiError} from "@/lib/request-user";
@@ -7,15 +6,6 @@ export const dynamic="force-dynamic";
 
 type SourceRow={benefit_id:string;status:string;discovered_at:string};
 type NotificationRow={channel:string;status:string;created_at:string;updated_at:string};
-
-async function timingSafeToken(request:Request,expected?:string){
-  const supplied=request.headers.get("authorization")?.replace(/^Bearer\s+/i,"")??"";
-  if(!expected||!supplied)return false;
-  const digest=async(value:string)=>new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value)));
-  const [left,right]=await Promise.all([digest(supplied),digest(expected)]);let mismatch=0;
-  for(let index=0;index<left.length;index++)mismatch|=left[index]^right[index];
-  return mismatch===0;
-}
 
 async function readSnapshot(operatorUserId:string):Promise<OperationsSnapshot>{
   const db=getD1Binding();
@@ -68,17 +58,4 @@ async function runMonitor(operatorUserId:string){
 
 export async function GET(){
   try{return Response.json(await runMonitor(await requireOperator()),{headers:{"Cache-Control":"no-store"}});}catch(error){return apiError(error);}
-}
-
-export async function POST(request:Request){
-  try{
-    const config=env as unknown as {AHALOOP_MONITOR_TOKEN?:string;AHALOOP_OPERATOR_USER_IDS?:string};
-    if(!config.AHALOOP_MONITOR_TOKEN)return Response.json({error:"운영 감시 인증 연결 전"},{status:503});
-    if(!await timingSafeToken(request,config.AHALOOP_MONITOR_TOKEN))return Response.json({error:"운영 감시 인증 실패"},{status:401});
-    const operators=(config.AHALOOP_OPERATOR_USER_IDS??"").split(",").map(value=>value.trim()).filter(Boolean);
-    if(!operators.length)return Response.json({error:"운영자 계정 연결 전"},{status:503});
-    const results=[];for(const operator of operators)results.push(await runMonitor(operator));
-    const status=results.some(result=>result.status==="critical")?"critical":results.some(result=>result.status==="attention")?"attention":"healthy";
-    return Response.json({status,checkedAt:new Date().toISOString(),operators:results.length,alerts:results.reduce((sum,result)=>sum+result.alerts.length,0)});
-  }catch(error){return apiError(error);}
 }
