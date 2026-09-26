@@ -4,6 +4,8 @@ import { assess } from "@/lib/benefit-rules";
 import { getD1Binding } from "@/db";
 import { readProfile } from "@/lib/profile-model";
 import { requestUser, apiError } from "@/lib/request-user";
+import { env } from "cloudflare:workers";
+import { isYouthCenterApiConfigured } from "@/lib/youth-center-api";
 
 export const dynamic = "force-dynamic";
 
@@ -12,9 +14,11 @@ export async function GET() {
   const user = await requestUser();
   const row = await getD1Binding().prepare("SELECT profile_data FROM user_profiles WHERE user_id=?").bind(user).first<Record<string,unknown>>();
   const now = Date.now();
+  const youthCenterConfigured=isYouthCenterApiConfigured((env as unknown as {YOUTHCENTER_OPEN_API_KEY?:string}).YOUTHCENTER_OPEN_API_KEY);
   const sources = benefitSources.map((source) => {
+    const connection=source.id==="youth-center-api" && youthCenterConfigured ? "api_configured" as const : source.connection;
     const ageMinutes = Math.max(0, Math.round((now - new Date(source.lastVerifiedAt).getTime()) / 60000));
-    return { ...source, statusLabel: sourceStatusLabel[source.connection], ageMinutes, freshness: ageMinutes <= source.freshnessSlaMinutes ? "within_sla" : "overdue" };
+    return { ...source, connection, statusLabel: sourceStatusLabel[connection], ageMinutes, freshness: ageMinutes <= source.freshnessSlaMinutes ? "within_sla" : "overdue" };
   });
   return Response.json({
     sources,

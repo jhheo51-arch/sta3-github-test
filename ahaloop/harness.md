@@ -27,6 +27,7 @@
 | --- | --- |
 | 패스 선택 수·화면 질문 규칙 | `npm run test:pass-harness` |
 | 출처·발송·데이터·후속 작업 경고 | `npm run test:operations-health` |
+| 온통청년 API 인증·응답·장애 경계 | `npm run test:youth-center-api` |
 | 요구 추적·포트폴리오 회귀 | `npm test` |
 | 코드 품질·배포 빌드 | `npm run lint`, `npm run build` |
 | 로그인·권한·저장 통합 | 로컬 서버 실행 뒤 `npm run test:local-api` |
