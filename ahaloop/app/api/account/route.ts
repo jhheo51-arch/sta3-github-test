@@ -17,6 +17,8 @@ export async function DELETE(request:Request) {
       db.prepare("DELETE FROM source_reviews WHERE user_id=?").bind(userId),
       db.prepare("DELETE FROM experiment_assignments WHERE user_id=?").bind(userId),
       db.prepare("DELETE FROM pilot_sessions WHERE operator_user_id=?").bind(userId),
+      db.prepare("DELETE FROM operational_alerts WHERE operator_user_id=?").bind(userId),
+      db.prepare("DELETE FROM operations_health_runs WHERE operator_user_id=?").bind(userId),
       db.prepare("DELETE FROM benefit_applications WHERE user_id=?").bind(userId),
       db.prepare("DELETE FROM consent_logs WHERE user_id=?").bind(userId),
       db.prepare("DELETE FROM sends WHERE user_id=?").bind(userId),

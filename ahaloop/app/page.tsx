@@ -100,7 +100,7 @@ type SourceDashboard = {
 };
 type SessionInfo={
   role:"operator"|"customer";
-  retention:{notificationAttemptsDays:number;activityDays:number;followupDays:number;accountRecords:string;enforcement:string};
+  retention:{notificationAttemptsDays:number;activityDays:number;operationsHealthDays:number;followupDays:number;accountRecords:string;enforcement:string};
 };
 
 const initialProfile: Profile = emptyProfile;

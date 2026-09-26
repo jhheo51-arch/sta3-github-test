@@ -11,6 +11,7 @@ const session=await api("/api/session");assert.equal(session.status,200);assert.
 const pilotBefore=await api("/api/pilot");assert.equal(pilotBefore.status,200);assert.equal(pilotBefore.data.target,5);
 assert.equal((await api("/api/pilot",{participantCode:"P01",status:"observed",consentStatus:"pending",choicesToFirstBenefit:3,firstBenefitElapsedSeconds:45,firstBenefitId:"kpass-youth-2026",preparationStarted:true,stopPoint:"",observation:"합성 로컬 검사"})).status,400,"observation requires consent");
 assert.equal((await api("/api/pilot",{participantCode:"P01",status:"observed",consentStatus:"agreed",choicesToFirstBenefit:3,firstBenefitElapsedSeconds:45,firstBenefitId:"kpass-youth-2026",preparationStarted:true,stopPoint:"",observation:"합성 로컬 검사"})).status,200);
+const operationsHealth=await api("/api/operations-health");assert.equal(operationsHealth.status,200);assert.equal(operationsHealth.data.status,"healthy");
 const saved=await api("/api/profile");assert.equal(saved.data.profile.name,p.name);assert.equal(saved.data.profile.userId,undefined,"client ID ignored");
 const passSession=crypto.randomUUID();
 assert.equal((await api("/api/pass-event",{eventType:"pass_session_started",sessionId:passSession})).status,201);

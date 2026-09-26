@@ -14,7 +14,7 @@ for(const [i,[text,expected]] of cases.entries()){
 const kpass=benefits.find(b=>b.id.startsWith("kpass"));
 assert.equal(kpass.preparationSteps.length,3,"one complete preparation journey is defined");
 assert.equal(PILOT_PARTICIPANT_CODES.length,5,"first pilot keeps five anonymous slots");
-assert.deepEqual(RETENTION_POLICY,{notificationAttemptsDays:90,activityDays:180,followupDays:365,accountRecords:"계정 삭제 전까지",enforcement:"로그인한 계정이 서비스를 열 때 만료 자료를 정리"});
+assert.deepEqual(RETENTION_POLICY,{notificationAttemptsDays:90,activityDays:180,operationsHealthDays:180,followupDays:365,accountRecords:"계정 삭제 전까지",enforcement:"로그인한 계정이 서비스를 열 때 만료 자료를 정리"});
 assert.equal(assess(kpass,emptyProfile).status,"check","AC-01 missing profile");
 for(const age of [18,19,34,35]){const p={...emptyProfile,age,kpassRegistered:true,transitTrips:20,monthlyTransitCost:60000,confirmedFields:["age","kpassRegistered","transitTrips","monthlyTransitCost"]};assert.equal(assess(kpass,p).status,age>=19&&age<=34?"ready":"watch","AC-02 age boundary");}
 assert.equal(assess(kpass,{...emptyProfile,age:27,confirmedFields:["age"]}).estimatedValue,0,"AC-06 incomplete qualification");

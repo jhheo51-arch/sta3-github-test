@@ -53,6 +53,46 @@ export const pilotSessions = sqliteTable("pilot_sessions", {
   index("idx_pilot_operator_status").on(table.operatorUserId, table.status),
 ]);
 
+export const operationalAlerts = sqliteTable("operational_alerts", {
+  id: text("id").primaryKey(),
+  operatorUserId: text("operator_user_id").notNull(),
+  alertKey: text("alert_key").notNull(),
+  category: text("category").notNull(),
+  severity: text("severity").notNull(),
+  title: text("title").notNull(),
+  detail: text("detail").notNull(),
+  status: text("status").notNull().default("open"),
+  firstDetectedAt: text("first_detected_at").notNull(),
+  lastDetectedAt: text("last_detected_at").notNull(),
+  resolvedAt: text("resolved_at"),
+}, (table) => [
+  uniqueIndex("idx_operational_alert_operator_key").on(
+    table.operatorUserId,
+    table.alertKey,
+  ),
+  index("idx_operational_alert_status").on(
+    table.operatorUserId,
+    table.status,
+    table.severity,
+  ),
+]);
+
+export const operationsHealthRuns = sqliteTable("operations_health_runs", {
+  id: text("id").primaryKey(),
+  operatorUserId: text("operator_user_id").notNull(),
+  overallStatus: text("overall_status").notNull(),
+  alertCount: integer("alert_count").notNull().default(0),
+  sourceFailureCount: integer("source_failure_count").notNull().default(0),
+  notificationFailureCount: integer("notification_failure_count").notNull().default(0),
+  dataAnomalyCount: integer("data_anomaly_count").notNull().default(0),
+  checkedAt: text("checked_at").notNull(),
+}, (table) => [
+  index("idx_operations_health_operator_time").on(
+    table.operatorUserId,
+    table.checkedAt,
+  ),
+]);
+
 export const userProfiles = sqliteTable("user_profiles", {
   userId: text("user_id").primaryKey(),
   profileData: text("profile_data"),
