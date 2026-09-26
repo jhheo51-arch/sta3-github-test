@@ -16,6 +16,8 @@ const pilotBefore=await api("/api/pilot");assert.equal(pilotBefore.status,200);a
 assert.equal((await api("/api/pilot",{participantCode:"P01",status:"observed",consentStatus:"pending",choicesToFirstBenefit:3,firstBenefitElapsedSeconds:45,firstBenefitId:"kpass-youth-2026",preparationStarted:true,stopPoint:"",observation:"합성 로컬 검사"})).status,400,"observation requires consent");
 assert.equal((await api("/api/pilot",{participantCode:"P01",status:"observed",consentStatus:"agreed",choicesToFirstBenefit:3,firstBenefitElapsedSeconds:45,firstBenefitId:"kpass-youth-2026",preparationStarted:true,stopPoint:"",observation:"합성 로컬 검사"})).status,200);
 const operationsHealth=await api("/api/operations-health");assert.equal(operationsHealth.status,200);assert.equal(operationsHealth.data.status,"healthy");
+assert.equal((await api("/api/benefit-sources/youth-center",{},false)).status,401,"Youth Center connection check requires login");
+assert.equal((await api("/api/benefit-sources/youth-center",{})).status,409,"Youth Center adapter stays locked without a server key");
 const saved=await api("/api/profile");assert.equal(saved.data.profile.name,p.name);assert.equal(saved.data.profile.userId,undefined,"client ID ignored");
 const passSession=crypto.randomUUID();
 assert.equal((await api("/api/pass-event",{eventType:"pass_session_started",sessionId:passSession})).status,201);

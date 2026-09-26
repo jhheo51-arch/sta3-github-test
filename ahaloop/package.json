@@ -14,7 +14,8 @@
     "test": "node tests/portfolio-check.mjs",
     "test:pass-harness": "tsx tests/ahaloop-pass-harness.ts",
     "test:operations-health": "tsx tests/operations-health-check.ts",
-    "harness:pass": "npm run test:pass-harness && npm run test:operations-health && npm run test && npm run lint && npm run build",
+    "test:youth-center-api": "tsx tests/youth-center-api.ts",
+    "harness:pass": "npm run test:pass-harness && npm run test:operations-health && npm run test:youth-center-api && npm run test && npm run lint && npm run build",
     "test:local-api": "node tests/local-api-check.mjs",
     "db:generate": "drizzle-kit generate"
   },

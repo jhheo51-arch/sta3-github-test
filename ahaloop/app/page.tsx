@@ -89,8 +89,9 @@ type SourceDashboard = {
     coverage: string;
     url: string;
     method: "open_api" | "official_page";
-    connection: "key_required" | "monitor_ready" | "manual_verified";
+    connection: "key_required" | "api_configured" | "monitor_ready" | "manual_verified";
     statusLabel: string;
+    setupNote?: string;
     priority: "P0" | "P1" | "P2";
     checkEveryMinutes: number;
     freshnessSlaMinutes: number;
@@ -1060,6 +1061,7 @@ function DeliveryView({
 function SourceRadar({ dashboard }: { dashboard: SourceDashboard | null }) {
   const statusTone: Record<string, string> = {
     key_required: "border-[#f0cc83] bg-[#fff8e8] text-[#76540a]",
+    api_configured: "border-[#9fd1c2] bg-[#f2faf7] text-[#176d55]",
     monitor_ready: "border-[#9fd1c2] bg-[#f2faf7] text-[#176d55]",
     manual_verified: "border-slate-200 bg-slate-50 text-slate-600",
   };
@@ -1102,6 +1104,7 @@ function SourceRadar({ dashboard }: { dashboard: SourceDashboard | null }) {
               <span>수집 방식 · {source.method === "open_api" ? "공식 Open API" : "공식 원문 변경 감시"}</span><span>목표 확인 주기 · {source.checkEveryMinutes < 60 ? `${source.checkEveryMinutes}분` : `${source.checkEveryMinutes / 60}시간`}</span>
               <Button asChild variant="ghost" size="sm" className="ml-auto"><a href={source.url} target="_blank" rel="noreferrer">공식 제공처 <ArrowUpRight /></a></Button>
             </div>
+            {source.setupNote && <p className="mt-3 text-sm font-medium text-[#176d55]">{source.setupNote}</p>}
           </article>
         ))}
       </section>
