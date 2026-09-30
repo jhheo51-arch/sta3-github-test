@@ -1,0 +1,4 @@
+interface:
+  display_name: "News Card Builder"
+  short_description: "검증된 여러 정보를 읽기 쉬운 카드뉴스로 만듭니다."
+  default_prompt: "Use $news-card-builder to research, verify, and turn this topic into a concise news-card set."
