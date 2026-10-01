@@ -509,6 +509,11 @@
 .creator-sources strong{font-size:.875rem;line-height:1.6}
 .creator-sources small{font-size:.75rem;line-height:1.6}
 
+/* Keep native scrolling without persistent rails or background scroll. */
+body:has(.detail.active,.creator.active){overflow:hidden}
+.detail,.creator,.creator-sources{scrollbar-width:none;overscroll-behavior:contain}
+.detail::-webkit-scrollbar,.creator::-webkit-scrollbar,.creator-sources::-webkit-scrollbar{display:none}
+
 /* v16: quiet coffee dock, consistent vector icons and clear selected state. */
 .app { --nav-height: 72px; --nav-muted: #746258; --nav-selected: #eee3d8; }
 .bottom-nav {
