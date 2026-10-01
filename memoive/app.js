@@ -156,4 +156,5 @@ function openCaseProposal(){
 }
 $('#output-used').onchange=()=>{$('#output-use-fields').hidden=!$('#output-used').checked;};
 $('#open-case-proposal').onclick=openCaseProposal;
-$('#case-record-list').innerHTML=caseRecords().map(record=>recordRow(record,'case-record')).join('');bindRecordButtons();
+const caseBrands={'example-toss-experiments':'토스','example-socar-customer':'쏘카','example-musinsa-experience':'무신사'};
+$('#case-record-list').innerHTML=caseRecords().map(record=>`<button type="button" class="case-record" data-record-id="${esc(record.id)}"><small class="case-source">${esc(caseBrands[record.id]||record.source)} · 예시</small><strong>${esc(record.title)}</strong><small class="case-date">${dateLabel(record.savedAt)} 저장 · ${record.thought?'내 생각 있음':'생각 남기기'}</small></button>`).join('');bindRecordButtons();
