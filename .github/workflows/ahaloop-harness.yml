@@ -6,11 +6,13 @@ on:
       - "ahaloop/**"
       # main requires this real integration check for MEMOIVE PRs as well.
       - "memoive/**"
+      - "proofline/**"
       - ".github/workflows/ahaloop-*.yml"
   push:
     branches: [main, "codex/**"]
     paths:
       - "ahaloop/**"
+      - "proofline/**"
       - ".github/workflows/ahaloop-*.yml"
   workflow_dispatch:
 

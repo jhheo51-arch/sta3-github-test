@@ -12,3 +12,8 @@
 - `docs/기획서-커리어-뉴스레터-v10.md`: 최신 PRD
 
 사이트는 `career-newsletter-site/dist/index.html`에서 확인할 수 있습니다.
+
+## PROOFLINE
+
+- [PROOFLINE v11 — 경험을 방향 카드와 첫 제안으로 연결](./proofline/)
+- 개인 체험과 가상 사례를 실제 시범 고객 수와 구분합니다. `cd proofline` 후 `npm test`로 검증합니다.
