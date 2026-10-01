@@ -105,3 +105,9 @@ node tests/navigation-order-check.cjs
 
 - 상세·창작·영감 선택 목록의 상시 스크롤바만 숨김. 상세/창작을 열 때 뒤쪽 본문 스크롤 잠금, 닫으면 복구. native overflow:auto 유지.
 - 375×812에서 이중 레일 없음과 가로 넘침 없음 확인. 상세 scrollTop 0→365.6 이동, 창작 목적 입력에서 Tab으로 관점 입력 이동, 닫은 후 body overflow 복구 확인. 실제 터치 기기 테스트는 미실시.
+
+## v21 전체 스크롤바 숨김 (2026-10-01)
+
+- 일부 패널에 한정했던 숨김 규칙을 앱 전체 및 별도 self-test 페이지에 적용. overflow, 포커스, 데이터 처리 변경 없이 scrollbar-width와 WebKit 표시만 조정.
+- 375×812 브라우저에서 html과 모든 요소의 scrollbar-width:none 확인. 홈 PageDown으로 scrollTop 0→710.4, 설정 패널 overflow:auto 유지, self-test에서도 모든 요소 none 및 PageDown 이동 확인.
+- 별도 테스트 페이지에 남은 이전 CSS 캐시를 발견해 스타일 주소·서비스 워커 버전을 갱신한 뒤 재확인. 사용자 실제 기기 확인은 아직 전.

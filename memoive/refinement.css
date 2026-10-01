@@ -511,8 +511,10 @@
 
 /* Keep native scrolling without persistent rails or background scroll. */
 body:has(.detail.active,.creator.active){overflow:hidden}
-.detail,.creator,.creator-sources{scrollbar-width:none;overscroll-behavior:contain}
-.detail::-webkit-scrollbar,.creator::-webkit-scrollbar,.creator-sources::-webkit-scrollbar{display:none}
+.detail,.creator,.creator-sources{overscroll-behavior:contain}
+/* All app surfaces: hide rails, never disable native scrolling. */
+*{scrollbar-width:none}
+*::-webkit-scrollbar{display:none;width:0;height:0}
 
 /* v16: quiet coffee dock, consistent vector icons and clear selected state. */
 .app { --nav-height: 72px; --nav-muted: #746258; --nav-selected: #eee3d8; }
