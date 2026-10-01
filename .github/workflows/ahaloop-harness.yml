@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "ahaloop/**"
+      # main requires this real integration check for MEMOIVE PRs as well.
+      - "memoive/**"
       - ".github/workflows/ahaloop-*.yml"
   push:
     branches: [main, "codex/**"]
