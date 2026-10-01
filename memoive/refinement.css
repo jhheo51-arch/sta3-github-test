@@ -488,6 +488,27 @@
 .case-pack button:active,.record-progress button:active{opacity:.7}
 [hidden]{display:none!important}
 
+/* v19: reading and writing surfaces share one calm, legible typeface. */
+.detail,.creator{font-family:'Noto Sans KR',system-ui,sans-serif}
+.detail h1,.detail h2,.detail h3,.detail blockquote,
+.creator h1,.creator-sources strong,.creator-draft #output-title{font-family:inherit}
+.detail-hero h1,.creator h1{font-size:clamp(1.5rem,5.5vw,1.75rem);font-weight:700;line-height:1.5;letter-spacing:-.035em;word-break:keep-all;overflow-wrap:anywhere}
+.detail-hero>p{font-size:.75rem;line-height:1.7}
+.detail-meta,.detail-tags span{font-size:.75rem;line-height:1.5;letter-spacing:0}
+.detail-meta{align-items:center;flex-wrap:wrap;gap:8px}
+.detail h2{font-size:1.125rem;line-height:1.7;letter-spacing:-.02em}
+.detail h3{font-size:1rem;line-height:1.65;letter-spacing:-.015em}
+.record-progress>.eyebrow{font-size:.875rem;font-weight:600;line-height:1.6;letter-spacing:0;color:var(--coffee)}
+.record-progress p{word-break:keep-all;overflow-wrap:anywhere}
+.record-stages{gap:8px}
+.record-stages li{font-size:.8125rem;line-height:1.5;padding:6px 10px}
+.record-progress .quiet-action{appearance:none;min-height:48px;margin-top:12px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--cream);color:var(--espresso);font-family:inherit;font-size:.875rem;font-weight:500;line-height:1.6;text-decoration:none}
+.creator form>label,.creator-draft>label,.creator legend{font-size:.875rem;font-weight:600;line-height:1.6}
+.creator input,.creator textarea,.creator select{font-family:inherit;font-size:1rem;font-weight:400;line-height:1.65;letter-spacing:0;color:var(--espresso)}
+.creator input::placeholder,.creator textarea::placeholder{font-family:inherit;font-size:.875rem;font-weight:400;letter-spacing:0;color:var(--nav-muted,#746258);opacity:1}
+.creator-sources strong{font-size:.875rem;line-height:1.6}
+.creator-sources small{font-size:.75rem;line-height:1.6}
+
 /* v16: quiet coffee dock, consistent vector icons and clear selected state. */
 .app { --nav-height: 72px; --nav-muted: #746258; --nav-selected: #eee3d8; }
 .bottom-nav {
