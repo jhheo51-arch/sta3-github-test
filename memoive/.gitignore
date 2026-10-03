@@ -1,6 +1,7 @@
 # Private local credentials and generated personal backups are not submission code.
 .env
 .env.*
+!.env.example
 .dev.vars
 .dev.vars.*
 .wrangler/
