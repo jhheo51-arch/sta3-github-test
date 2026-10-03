@@ -3,8 +3,8 @@
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.DataTools = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
-  const text = value => typeof value === 'string' ? value.slice(0, 10000) : '';
-  const list = value => Array.isArray(value) ? value.map(text).filter(Boolean).slice(0, 50) : [];
+  const text = value => typeof value === 'string' ? value : '';
+  const list = value => Array.isArray(value) ? value.map(text).filter(Boolean) : [];
   const safeUrl = value => {
     try {
       const url = new URL(value);
@@ -35,7 +35,7 @@
       points: list(record.points),
       topics: list(record.topics),
       actions: list(record.actions),
-      evidence: Array.isArray(record.evidence) ? record.evidence.slice(0, 20).map(item => ({ label: text(item?.label), text: text(item?.text) })).filter(item => item.text) : [],
+      evidence: Array.isArray(record.evidence) ? record.evidence.map(item => ({ label: text(item?.label), text: text(item?.text) })).filter(item => item.text) : [],
       confidence: Number.isFinite(Number(record.confidence)) ? Math.max(0, Math.min(100, Number(record.confidence))) : 0,
       revisitOn: /^\d{4}-\d{2}-\d{2}$/.test(record.revisitOn) ? record.revisitOn : ''
     };
@@ -45,7 +45,9 @@
     const data = typeof input === 'string' ? JSON.parse(input) : input;
     if (!data || typeof data !== 'object' || !Array.isArray(data.records)) throw new Error('MEMOIVE 백업 파일이 아니에요.');
     const records = data.records.map(cleanRecord).filter(Boolean);
-    if (!records.length && data.records.length) throw new Error('가져올 수 있는 기록이 없어요.');
+    if (records.length !== data.records.length) throw new Error('잘못된 기록이 포함돼 가져오기를 중단했어요. 기존 기록은 그대로예요.');
+    if (new Set(records.map(record=>record.id)).size!==records.length) throw new Error('같은 ID의 기록이 중복된 백업이에요. 가져오지 않았어요.');
+    if (data.outputs!==undefined && (!Array.isArray(data.outputs) || data.outputs.some(output=>!cleanOutput(output)) || new Set(data.outputs.map(output=>output.id)).size!==data.outputs.length)) throw new Error('잘못되거나 중복된 결과물이 포함돼 가져오기를 중단했어요.');
     const reminderFrequency = ['daily', '3', '1'].includes(String(data.reminderFrequency)) ? String(data.reminderFrequency) : '3';
     const reminderTime = /^([01]\d|2[0-3]):[0-5]\d$/.test(data.reminderTime) ? data.reminderTime : '07:00';
     return { records, outputs: cleanOutputs(data.outputs), role: text(data.role), resurface: data.resurface !== false, reminderFrequency, reminderTime, analytics: cleanAnalytics(data.analytics) };
@@ -68,7 +70,7 @@
       title: text(output.title),
       body: text(output.body),
       usedAt: text(output.useNote).trim() && Number.isFinite(Date.parse(output.usedAt)) ? output.usedAt : '',
-      useNote: text(output.useNote).slice(0, 500),
+      useNote: text(output.useNote),
       sourceRecordIds: list(output.sourceRecordIds),
       createdAt: Number.isFinite(Date.parse(output.createdAt)) ? output.createdAt : now,
       updatedAt: Number.isFinite(Date.parse(output.updatedAt)) ? output.updatedAt : now
@@ -76,12 +78,13 @@
   }
 
   function cleanOutputs(value) {
-    return Array.isArray(value) ? value.map(cleanOutput).filter(Boolean).slice(0, 500) : [];
+    return Array.isArray(value) ? value.map(cleanOutput).filter(Boolean) : [];
   }
 
   function mergeOutputs(current, incoming) {
-    const outputs = [...cleanOutputs(current), ...cleanOutputs(incoming)];
-    return [...new Map(outputs.map(output => [output.id, output])).values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 500);
+    // Current edits take precedence over an older same-ID backup.
+    const outputs = [...cleanOutputs(incoming), ...cleanOutputs(current)];
+    return [...new Map(outputs.map(output => [output.id, output])).values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   }
 
   function cleanAnalytics(value) {
