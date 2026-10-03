@@ -22,12 +22,14 @@
       type: text(record.type) || 'text',
       label: text(record.label) || 'TEXT',
       savedAt: /^\d{4}-\d{2}-\d{2}$/.test(record.savedAt) ? record.savedAt : new Date().toISOString().slice(0, 10),
+      capturedAt: typeof record.capturedAt === 'string' && Number.isFinite(Date.parse(record.capturedAt)) ? new Date(record.capturedAt).toISOString() : '',
       sourceDate: text(record.sourceDate),
       title: text(record.title),
       source: text(record.source),
       url: safeUrl(record.url),
       summary: text(record.summary),
       thought: text(record.thought),
+      applicationIdea: text(record.applicationIdea),
       quote: text(record.quote),
       uncertainty: text(record.uncertainty),
       points: list(record.points),
@@ -65,6 +67,8 @@
       viewpoint: text(output.viewpoint),
       title: text(output.title),
       body: text(output.body),
+      usedAt: text(output.useNote).trim() && Number.isFinite(Date.parse(output.usedAt)) ? output.usedAt : '',
+      useNote: text(output.useNote).slice(0, 500),
       sourceRecordIds: list(output.sourceRecordIds),
       createdAt: Number.isFinite(Date.parse(output.createdAt)) ? output.createdAt : now,
       updatedAt: Number.isFinite(Date.parse(output.updatedAt)) ? output.updatedAt : now
@@ -121,18 +125,37 @@
       helpfulRate: ratings.length ? Math.round(helpful / ratings.length * 100) : 0,
       reuseCount: safeEvents.filter(event => event.name === 'record_reused' && recordIds.has(event.recordId)).length,
       outputCount: safeOutputs.length,
+      usedOutputCount: safeOutputs.filter(output => output.usedAt && output.useNote.trim()).length,
       convertedCount: convertedIds.size,
       conversionRate: total ? Math.round(convertedIds.size / total * 100) : 0
     };
   }
 
   const exampleIds = new Set(['daangn-dangbeoni', 'design-memory', 'voice-capture', 'image-timeline', 'text-question']);
-  function isExample(record) { return exampleIds.has(record?.id); }
+  function isExample(record) { return record?.isExample === true || exampleIds.has(record?.id) || ['example-toss-experiments','example-socar-customer','example-musinsa-experience'].includes(record?.id); }
+  function withExamples(records, examples) {
+    const key = value => { try { const u = new URL(value); u.hash = ''; return decodeURI(u.href).replace(/\/$/, ''); } catch { return ''; } };
+    const merged = [...records];
+    for (const sample of examples) {
+      if (!merged.some(record => record.id === sample.id || (key(record.url) && key(record.url) === key(sample.url)))) merged.push({...sample});
+    }
+    return merged;
+  }
+  function recordProgress(record, outputs) {
+    const linked = cleanOutputs(outputs).filter(output => output.sourceRecordIds.includes(record.id)).sort((a,b) => b.updatedAt.localeCompare(a.updatedAt));
+    return {hasThought:Boolean(record.thought?.trim()), output:linked[0] || null, used:linked.some(output => output.usedAt && output.useNote.trim())};
+  }
   function matchesQuery(record, query = '') {
     const normalize = value => String(value || '').normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
     const haystack = normalize([record.title, record.source, record.url, record.summary, record.thought,
-      ...(record.topics || []), ...(record.points || []), ...(record.evidence || []).map(item => item.text)].join(' '));
+      record.applicationIdea, ...(record.topics || []), ...(record.points || []), ...(record.evidence || []).map(item => item.text)].join(' '));
     return normalize(query).split(' ').filter(Boolean).every(word => haystack.includes(word));
+  }
+
+  // Legacy records without a time retain their relative order on the same day.
+  function sortRecords(records) {
+    const time = record => Number.isFinite(Date.parse(record.capturedAt)) ? Date.parse(record.capturedAt) : 0;
+    return [...records].sort((a, b) => String(b.savedAt || '').localeCompare(String(a.savedAt || '')) || time(b) - time(a));
   }
 
   function mergeRecords(current, incoming) {
@@ -149,7 +172,7 @@
         actions: [...new Set([...(existing.actions || []), ...(record.actions || [])])]
       };
     });
-    return merged.sort((a, b) => b.savedAt.localeCompare(a.savedAt));
+    return sortRecords(merged);
   }
 
   const stopWords = new Set(['먼저','다시','기록','생각','내용','사용자','위해','대한','있는','하는','하면','있어요','해요','것을','그리고','하지만','기능','제품']);
@@ -201,5 +224,5 @@
     return drafts[type] || drafts.idea;
   }
 
-  return { validateBackup, mergeRecords, cleanOutputs, mergeOutputs, cleanAnalytics, mergeAnalytics, analyticsSummary, relatedRecords, toMarkdown, buildDraft, isExample, matchesQuery };
+  return { sortRecords, validateBackup, mergeRecords, cleanOutputs, mergeOutputs, cleanAnalytics, mergeAnalytics, analyticsSummary, relatedRecords, toMarkdown, buildDraft, isExample, matchesQuery, withExamples, recordProgress };
 });

@@ -34,3 +34,7 @@ jobs:
         run: node tests/submission-self-check.cjs
       - name: Reproduce technical before-and-after checks
         run: node tests/before-after-check.cjs
+      - name: Check examples, use evidence, navigation and newest-first order
+        run: |
+          node tests/cases-use-check.cjs
+          node tests/navigation-order-check.cjs
